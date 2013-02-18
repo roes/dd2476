@@ -13,6 +13,8 @@ package ir;
 import java.util.LinkedList;
 import java.util.HashMap;
 import java.util.ListIterator;
+import java.util.Iterator;
+import java.util.Collections;
 
 
 /**
@@ -37,6 +39,29 @@ public class HashedIndex implements Index {
     	index.get(token).add(docID, offset);
     }
 
+
+    public void calculateWeights( int nbDocs ) {
+      double[] norm = new double[nbDocs];
+      for (Iterator<PostingsList> it = index.values().iterator(); it.hasNext();) {
+        PostingsList p = it.next();
+        for (ListIterator<PostingsEntry> it2 = p.getIterator(); it2.hasNext();) {
+          PostingsEntry e = it2.next();
+          norm[e.docID] += e.size()*e.size();
+        }
+      }
+      for (int i = 0; i < nbDocs; i++) {
+        if (norm[i] > 0) {
+          norm[i] = Math.sqrt(norm[i]);
+        }
+      }
+      for (Iterator<PostingsList> it = index.values().iterator(); it.hasNext();) {
+        PostingsList p = it.next();
+        for (ListIterator<PostingsEntry> it2 = p.getIterator(); it2.hasNext();) {
+          PostingsEntry e = it2.next();
+          e.score = (e.size()*Math.log10(nbDocs/p.size()))/norm[e.docID];
+        }
+      }
+    }
 
     /**
      *  Returns the postings for a specific term, or null
@@ -125,7 +150,27 @@ public class HashedIndex implements Index {
     			merge = tmp;
     		}
     		return merge;
-    	}
+    	} else if ( queryType == Index.RANKED_QUERY ) {
+    		int nb_of_terms = query.terms.size();
+    		if ( nb_of_terms == 0 ) {
+    			return null;
+    		}
+        HashMap<Integer, PostingsEntry> entries = new HashMap<Integer, PostingsEntry>();
+    		for ( int i = 0; i < nb_of_terms; i++ ) {
+          for (ListIterator<PostingsEntry> it =
+               getPostings(query.terms.get(i)).getIterator(); it.hasNext();) {
+            PostingsEntry e = it.next();
+            if (!entries.containsKey(e.docID)) {
+              entries.put(e.docID, new PostingsEntry(e.docID));
+            }
+            entries.get(e.docID).score += e.score;
+          }
+        }
+        PostingsList tmp = new PostingsList();
+        tmp.list.addAll(entries.values());
+        Collections.sort(tmp.list);
+        return tmp;
+      }
     	return null;
     }
 

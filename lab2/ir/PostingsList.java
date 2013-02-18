@@ -18,7 +18,7 @@ import java.util.ListIterator;
 public class PostingsList implements Serializable {
     
     /** The postings list as a linked list. */
-    private LinkedList<PostingsEntry> list = new LinkedList<PostingsEntry>();
+    public LinkedList<PostingsEntry> list = new LinkedList<PostingsEntry>();
 
 
     /**  Number of postings in this list  */
