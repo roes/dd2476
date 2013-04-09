@@ -219,17 +219,9 @@ public class PageRank{
             }
         }
 
-        //for(int i = 0; i < numberOfDocs; i++){
-        //    rank[i] = x1[i];
-        //    System.out.printf("%5s %f\n", docName[i], rank[i]);
-        //}
-        //System.out.println("1081: " + x1[docNumber.get("1081")]);
-        //System.out.println("522 : " + x1[docNumber.get("522")]);
-
         ArrayList<Pair> res = new ArrayList<Pair>();
         for(int i = 0; i < numberOfDocs; i++){
-            Pair p = new Pair(docName[i], x1[i]);
-            res.add(p);
+            res.add(new Pair(docName[i], x1[i]));
         }
         Collections.sort(res);
         for(int i = 0; i < 50; i++){
