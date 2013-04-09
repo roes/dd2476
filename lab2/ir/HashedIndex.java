@@ -44,9 +44,10 @@ public class HashedIndex implements Index {
       double[] norm = new double[nbDocs];
       for (Iterator<PostingsList> it = index.values().iterator(); it.hasNext();) {
         PostingsList p = it.next();
+        double idf = Math.log10(nbDocs/p.size());
         for (ListIterator<PostingsEntry> it2 = p.getIterator(); it2.hasNext();) {
           PostingsEntry e = it2.next();
-          norm[e.docID] += e.size()*e.size();
+          norm[e.docID] += e.size()*e.size()*idf*idf;
         }
       }
       for (int i = 0; i < nbDocs; i++) {
@@ -56,9 +57,10 @@ public class HashedIndex implements Index {
       }
       for (Iterator<PostingsList> it = index.values().iterator(); it.hasNext();) {
         PostingsList p = it.next();
+        double idf = Math.log10(nbDocs/p.size());
         for (ListIterator<PostingsEntry> it2 = p.getIterator(); it2.hasNext();) {
           PostingsEntry e = it2.next();
-          e.score = (e.size()*Math.log10(nbDocs/p.size()))/norm[e.docID];
+          e.score = (e.size()*idf)/norm[e.docID];
         }
       }
     }
