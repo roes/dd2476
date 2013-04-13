@@ -157,31 +157,19 @@ public class HashedIndex implements Index {
       if ( nb_of_terms == 0 ) {
         return null;
       }
-      HashMap<String, Integer> queryTerms = new HashMap<String, Integer>();
-      for ( int i = 0; i < nb_of_terms; i++ ) {
-        String term = query.terms.get(i);
-        if (queryTerms.containsKey(term)){
-          queryTerms.put(term, queryTerms.get(term)+1);
-        } else {
-          queryTerms.put(term, 1);
-        }
-      }
-      double queryNorm = 0;
-      for (Iterator<String> t = queryTerms.keySet().iterator(); t.hasNext(); ){
-        String term = t.next();
-        queryNorm += Math.pow(queryTerms.get(term),2);
-      }
-      queryNorm = Math.sqrt(queryNorm);
       HashMap<Integer, PostingsEntry> entries = new HashMap<Integer, PostingsEntry>();
-      for (Iterator<String> t = queryTerms.keySet().iterator(); t.hasNext(); ){
+      Iterator<String> t = query.terms.iterator();
+      Iterator<Double> w = query.weights.iterator();
+      for (; t.hasNext(); ){
         String term = t.next();
-        for (ListIterator<PostingsEntry> it = getPostings(term).getIterator();
-             it.hasNext();) {
+        Double weight = w.next();
+        for (Iterator<PostingsEntry> it = getPostings(term).list.iterator();
+             it.hasNext(); ){
           PostingsEntry e = it.next();
-          if (!entries.containsKey(e.docID)) {
+          if (!entries.containsKey(e.docID)){
             entries.put(e.docID, new PostingsEntry(e.docID));
           }
-          entries.get(e.docID).score += e.score*((double)queryTerms.get(term)/queryNorm);
+          entries.get(e.docID).score += e.score*weight;
         }
       }
       PostingsList tmp = new PostingsList();
