@@ -12,6 +12,11 @@ import java.util.StringTokenizer;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.ArrayList;
+import java.io.File;
+import java.io.Reader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.HashSet;
 
 public class Query {
 
@@ -89,6 +94,7 @@ public class Query {
     double beta = 0.9;
     double b = beta/dr.size();
     HashMap<String, Double> qm = new HashMap<String, Double>();
+    // Calculate new weight of old query terms.
     Iterator<String> t = terms.iterator();
     Iterator<Double> w = weights.iterator();
     for (; t.hasNext(); ){
@@ -96,10 +102,48 @@ public class Query {
       Double weight = w.next();
       qm.put(term, alpha*weight);
     }
+    // Calculate weight of each documents terms.
     for (Iterator<PostingsEntry> it = dr.iterator(); it.hasNext();){
       int docId = it.next().docID;
-      // get all words in doc with docID = docId.
-      // for each word add weight = b*score.
+      // Get terms from doc.
+      String path = indexer.index.docIDs.get(""+docId);
+      File f = new File(path);
+      HashSet<String> words = new HashSet<String>();
+      try {
+        Reader reader = new FileReader(f);
+        SimpleTokenizer tok = new SimpleTokenizer(reader);
+        while (tok.hasMoreTokens()){
+          words.add(tok.nextToken());
+        }
+        reader.close();
+      }
+      catch (IOException e){
+        e.printStackTrace();
+      }
+      // For each term find weight in list. (Calc instead?)
+      for (Iterator<String> wi = words.iterator(); wi.hasNext();){
+        String word = wi.next();
+        LinkedList<PostingsEntry> l = indexer.index.getPostings(word).list;
+        Double weight = 0.0;
+        for (Iterator<PostingsEntry> li = l.iterator(); li.hasNext(); ){
+          PostingsEntry e = li.next();
+          if (e.docID == docId){
+            weight = e.score;
+            break;
+          }
+        }
+        // Add terms and weights from doc.
+        if (qm.containsKey(word)){
+          qm.put(word, qm.get(word)+b*weight);
+        } else {
+          qm.put(word, b*weight);
+        }
+      }
+    }
+    terms = new LinkedList<String>(qm.keySet());
+    weights.clear();
+    for (Iterator<String> it = terms.iterator(); it.hasNext(); ){
+      weights.add(qm.get(it.next()));
     }
   }
 }
